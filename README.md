@@ -1,71 +1,76 @@
-# node-version README
+# Node Version
 
-This is the README for your extension "node-version". After writing up a brief description, we recommend including the following sections.
+一个简单的 VS Code 扩展，用于显示和管理 Node.js 版本。
 
-## Features
+## 功能
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 在状态栏实时显示当前 Node.js 和 NPM 版本
+- 支持使用 NVM 切换不同的 Node.js 版本
+- 支持安装新的 Node.js 版本
+- 自动检测 NVM 环境并提供相应功能
 
-For example if there is an image subfolder under your extension project workspace:
+## 要求
 
-\!\[feature X\]\(images/feature-x.png\)
+- 需要安装 [Node.js](https://nodejs.org/)
+- 推荐安装 [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm) 以使用版本切换功能
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 使用方法
 
-## Requirements
+### 状态栏显示
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+插件激活后，会在 VS Code 的状态栏显示当前使用的 Node.js 和 NPM 版本。
 
-## Extension Settings
+- 黄色警告图标： Node.js 版本
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### 命令
 
-For example:
+插件提供以下命令（可通过命令面板 `Ctrl+Shift+P` 或 `Cmd+Shift+P` 访问）：
 
-This extension contributes the following settings:
+- `Show Node Version`：显示当前 Node.js 和 NPM 版本信息
+- `Switch Node Version`：切换到其他已安装的 Node.js 版本（需要 NVM）
+- `Install New Node Version`：安装新的 Node.js 版本（需要 NVM）
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## 扩展设置
 
-## Known Issues
+暂无配置选项。
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## 已知问题
 
-## Release Notes
+- 在某些环境下可能需要重启 VS Code 才能正确识别 NVM 环境变量
 
-Users appreciate release notes as you update your extension.
+## 发布说明
 
-### 1.0.0
+### 0.0.1
 
-Initial release of ...
+- 初始版本
+- 支持显示 Node.js 和 NPM 版本
+- 支持 NVM 版本切换和安装
 
-### 1.0.1
+## 开发
 
-Fixed issue #.
+### 项目结构
 
-### 1.1.0
+node-version/
+├── src/
+│ ├── commands/ # 命令实现
+│ ├── test/ # 测试文件
+│ ├── extension.ts # 扩展入口
+│ ├── utils.ts # 工具函数
+│ └── version.ts # 版本信息处理
+├── package.json # 扩展配置
+└── README.md # 文档
 
-Added features X, Y, and Z.
+### 构建和调试
 
----
+1. 克隆仓库
+2. 运行 `npm install` 安装依赖
+3. 在 VS Code 中打开项目
+4. 按 F5 启动调试
 
-## Following extension guidelines
+## 贡献
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+欢迎提交 Issue 和 Pull Request！
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## 许可证
 
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+[MIT](LICENSE)
