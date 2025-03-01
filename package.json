@@ -22,11 +22,11 @@
         "title": "Show Node Version"
       },
       {
-        "command": "node-version.switchVersion",
+        "command": "node-version.switchNodeVersion",
         "title": "Switch Node Version"
       },
       {
-        "command": "node-version.installVersion",
+        "command": "node-version.installNodeVersion",
         "title": "Install New Node Version"
       }
     ]
