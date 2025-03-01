@@ -45,12 +45,22 @@ async function updateNodeVersion() {
 	try {
 		const { stdout } = await execAsync('node --version');
 		const version = stdout.trim();
-		// 使用更醒目的格式
 		statusBarItem.text = `$(versions) Node: ${version}`;
 		statusBarItem.tooltip = `Node.js 版本: ${version}`;
-	} catch (error) {
-		statusBarItem.text = '$(error) Node: 未知';
-		statusBarItem.tooltip = '无法获取 Node.js 版本';
+	} catch (error: any) {
+		console.error('获取Node版本出错:', error);
+
+		let errorMessage = '未知错误';
+		if (error.code === 'ENOENT') {
+			errorMessage = '找不到node命令，请确保Node.js已安装且在环境变量中';
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		statusBarItem.text = '$(error) Node: 错误';
+		statusBarItem.tooltip = `无法获取Node.js版本: ${errorMessage}`;
+
+		vscode.window.showErrorMessage(`Node.js版本检测失败: ${errorMessage}`);
 	}
 }
 
