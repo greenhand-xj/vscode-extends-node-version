@@ -9,6 +9,33 @@ const execAsync = promisify(exec);
 let statusBarItem: vscode.StatusBarItem;
 let versionCheckInterval: NodeJS.Timeout;  // 改用 Timeout 类型
 
+async function getVersionInfo() {
+	const info = {
+		node: '',
+		npm: '',
+		globalPackages: ''
+	};
+
+	try {
+		// 获取 Node 版本
+		const { stdout: nodeVersion } = await execAsync('node --version');
+		info.node = nodeVersion.trim();
+
+		// 获取 NPM 版本
+		const { stdout: npmVersion } = await execAsync('npm --version');
+		info.npm = npmVersion.trim();
+
+		// 获取全局包列表
+		const { stdout: npmList } = await execAsync('npm list -g --depth=0');
+		info.globalPackages = npmList;
+
+		return info;
+	} catch (error: any) {
+		vscode.window.showErrorMessage('获取版本信息出错:', error.message);
+		return info
+	}
+}
+
 export async function activate(context: vscode.ExtensionContext) {
 	try {
 		// 创建状态栏项，设置高优先级使其更靠近左侧
@@ -20,9 +47,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// 注册命令
 		let disposable = vscode.commands.registerCommand('node-version.showNodeVersion', async () => {
-			// 点击时刷新版本并显示
 			await updateNodeVersion();
-			vscode.window.showInformationMessage(`当前 Node.js 版本: ${statusBarItem.text.replace('$(versions) Node: ', '')}`);
+			const info = statusBarItem.tooltip;
+			if (info) {
+				vscode.window.showInformationMessage(info.toString(), { modal: true });
+			}
 		});
 		context.subscriptions.push(disposable);
 
@@ -33,34 +62,38 @@ export async function activate(context: vscode.ExtensionContext) {
 		// 每2秒检查一次版本
 		versionCheckInterval = setInterval(async () => {
 			await updateNodeVersion();
-		}, 2000);
+		}, 3000);
 
 		console.log('Node版本插件已激活');
-	} catch (error) {
-		console.error('激活插件时出错:', error);
+	} catch (error: any) {
+		vscode.window.showErrorMessage('激活插件时出错:', error.message);
 	}
 }
 
 async function updateNodeVersion() {
 	try {
-		const { stdout } = await execAsync('node --version');
-		const version = stdout.trim();
-		statusBarItem.text = `$(versions) Node: ${version}`;
-		statusBarItem.tooltip = `Node.js 版本: ${version}`;
+		const info = await getVersionInfo();
+
+		statusBarItem.text = `$(versions) Node: ${info.node} | NPM: ${info.npm}`;
+		statusBarItem.tooltip =
+			`Node.js 版本: ${info.node}\n` +
+			`NPM 版本: ${info.npm}\n\n` +
+			`全局包列表:\n${info.globalPackages}`;
+
 	} catch (error: any) {
-		console.error('获取Node版本出错:', error);
+		console.error('获取版本信息出错:', error);
 
 		let errorMessage = '未知错误';
 		if (error.code === 'ENOENT') {
-			errorMessage = '找不到node命令，请确保Node.js已安装且在环境变量中';
+			errorMessage = '找不到node/npm命令，请确保Node.js已安装且在环境变量中';
 		} else if (error.message) {
 			errorMessage = error.message;
 		}
 
-		statusBarItem.text = '$(error) Node: 错误';
-		statusBarItem.tooltip = `无法获取Node.js版本: ${errorMessage}`;
+		statusBarItem.text = '$(error) Node/NPM: 错误';
+		statusBarItem.tooltip = `无法获取版本信息: ${errorMessage}`;
 
-		vscode.window.showErrorMessage(`Node.js版本检测失败: ${errorMessage}`);
+		vscode.window.showErrorMessage(`版本信息检测失败: ${errorMessage}`);
 	}
 }
 
