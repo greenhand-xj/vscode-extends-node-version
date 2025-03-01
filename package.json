@@ -20,6 +20,10 @@
       {
         "command": "node-version.showNodeVersion",
         "title": "show node version"
+      },
+      {
+        "command": "node-version.switchVersion",
+        "title": "switch node version"
       }
     ]
   },
