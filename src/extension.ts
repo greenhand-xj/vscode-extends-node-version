@@ -1,10 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { sleep, execAsync, checkNvm } from './utils';
 
-const execAsync = promisify(exec);
 
 let statusBarItem: vscode.StatusBarItem;
 let versionCheckInterval: NodeJS.Timeout;  // 改用 Timeout 类型
@@ -31,14 +29,6 @@ async function getVersionInfo() {
 	}
 }
 
-async function checkNvm() {
-	try {
-		await execAsync('nvm version');
-		return true;
-	} catch {
-		return false;
-	}
-}
 
 async function getRemoteAvailableNodeVersions() {
 	try {
@@ -141,6 +131,37 @@ async function switchNodeVersion() {
 	}
 }
 
+async function installNodeVersion() {
+	try {
+		const versions = await getRemoteAvailableNodeVersions();
+
+		const selected = await vscode.window.showQuickPick(
+			versions.map(v => ({ label: v.version, description: v.type })),
+			{
+				placeHolder: '选择要安装的 Node 版本'
+			}
+		);
+
+		if (selected) {
+			await vscode.window.withProgress({
+				location: vscode.ProgressLocation.Notification,
+				title: `正在安装 Node v${selected.label}`,
+				cancellable: false
+			}, async () => {
+				await execAsync(`nvm install ${selected.label.replace('v', '')}`);
+				await sleep(500);
+				await execAsync(`nvm use ${selected.label.replace('v', '')}`);
+				await sleep(500);
+				await updateNodeVersion();
+			});
+
+			vscode.window.showInformationMessage(`Node ${selected.label} 安装并切换完成`);
+		}
+	} catch (error: any) {
+		vscode.window.showErrorMessage('安装 Node 版本失败:', error.message);
+	}
+}
+
 export async function activate(context: vscode.ExtensionContext) {
 	try {
 		// 创建状态栏项，设置高优先级使其更靠近左侧
@@ -160,6 +181,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		let switchVersionCommand = vscode.commands.registerCommand('node-version.switchVersion', switchNodeVersion);
 		context.subscriptions.push(switchVersionCommand);
 
+		// 添加安装版本的命令
+		let installVersionCommand = vscode.commands.registerCommand('node-version.installVersion', installNodeVersion);
+		context.subscriptions.push(installVersionCommand);
+
 		// 初始显示版本
 		await updateNodeVersion();
 		statusBarItem.show();
@@ -178,7 +203,6 @@ export async function activate(context: vscode.ExtensionContext) {
 async function updateNodeVersion() {
 	try {
 		const info = await getVersionInfo();
-
 		statusBarItem.text = `$(versions) Node: ${info.node} | NPM: ${info.npm}`;
 		statusBarItem.tooltip =
 			`Node.js 版本: ${info.node}\n` +

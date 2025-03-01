@@ -19,11 +19,15 @@
     "commands": [
       {
         "command": "node-version.showNodeVersion",
-        "title": "show node version"
+        "title": "Show Node Version"
       },
       {
         "command": "node-version.switchVersion",
-        "title": "switch node version"
+        "title": "Switch Node Version"
+      },
+      {
+        "command": "node-version.installVersion",
+        "title": "Install New Node Version"
       }
     ]
   },
