@@ -1,6 +1,6 @@
 {
-  "name": "node-version",
-  "displayName": "node-version",
+  "name": "node-version-view",
+  "displayName": "node-version-view",
   "description": "实时查看node",
   "publisher": "eric-fe",
   "version": "0.0.1",
