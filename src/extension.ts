@@ -12,8 +12,7 @@ let versionCheckInterval: NodeJS.Timeout;  // 改用 Timeout 类型
 async function getVersionInfo() {
 	const info = {
 		node: '',
-		npm: '',
-		globalPackages: ''
+		npm: ''
 	};
 
 	try {
@@ -25,14 +24,10 @@ async function getVersionInfo() {
 		const { stdout: npmVersion } = await execAsync('npm --version');
 		info.npm = npmVersion.trim();
 
-		// 获取全局包列表
-		const { stdout: npmList } = await execAsync('npm list -g --depth=0');
-		info.globalPackages = npmList;
-
 		return info;
 	} catch (error: any) {
 		vscode.window.showErrorMessage('获取版本信息出错:', error.message);
-		return info
+		return info;
 	}
 }
 
@@ -45,7 +40,7 @@ async function checkNvm() {
 	}
 }
 
-async function getAvailableNodeVersions() {
+async function getRemoteAvailableNodeVersions() {
 	try {
 		const { stdout } = await execAsync('nvm list available');
 		const lines = stdout.split('\n');
@@ -95,6 +90,26 @@ async function getAvailableNodeVersions() {
 	}
 }
 
+async function getLocalAvailableNodeVersions() {
+	try {
+		const { stdout } = await execAsync('nvm ls');
+		console.log(stdout);
+
+		return stdout.split('\n')
+			.filter(line => line.trim() && /\d+\.\d+\.\d+/.test(line))  // 保留所有包含版本号的行
+			.map(line => {
+				// 提取版本号
+				const version = line.match(/\d+\.\d+\.\d+/)?.[0] || '';
+				return version;
+			})
+			.filter(item => item !== '');  // 过滤掉无效版本
+
+	} catch (error: any) {
+		vscode.window.showErrorMessage('获取本地Node版本列表失败:', error.message);
+		return [];
+	}
+}
+
 async function switchNodeVersion() {
 	const hasNvm = await checkNvm();
 	if (!hasNvm) {
@@ -102,19 +117,14 @@ async function switchNodeVersion() {
 		return;
 	}
 
-	const versions = await getAvailableNodeVersions();
-	console.log(versions);
+	const versions = await getLocalAvailableNodeVersions();
 	if (!versions.length) {
 		vscode.window.showErrorMessage('未找到可用的 Node 版本');
 		return;
 	}
 
 	const selected = await vscode.window.showQuickPick(
-		versions.map(v => ({
-			label: v.version,
-			description: v.type,  // 在选项右侧显示版本类型
-			detail: v.type === 'LTS' ? '长期支持版本' : '当前最新版本'
-		})),
+		versions,
 		{
 			placeHolder: '选择要切换的 Node 版本'
 		}
@@ -122,9 +132,9 @@ async function switchNodeVersion() {
 
 	if (selected) {
 		try {
-			await execAsync(`nvm use ${selected.label}`);
+			await execAsync(`nvm use ${selected}`);
 			await updateNodeVersion();
-			vscode.window.showInformationMessage(`已切换到 Node ${selected.label} (${selected.description})`);
+			vscode.window.showInformationMessage(`已切换到 Node ${selected}`);
 		} catch (error: any) {
 			vscode.window.showErrorMessage('切换 Node 版本失败:', error.message);
 		}
@@ -143,10 +153,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		// 注册命令
 		let disposable = vscode.commands.registerCommand('node-version.showNodeVersion', async () => {
 			await updateNodeVersion();
-			// const info = statusBarItem.tooltip;
-			// if (info) {
-			// 	vscode.window.showInformationMessage(info.toString(), { modal: true });
-			// }
 		});
 		context.subscriptions.push(disposable);
 
@@ -176,8 +182,7 @@ async function updateNodeVersion() {
 		statusBarItem.text = `$(versions) Node: ${info.node} | NPM: ${info.npm}`;
 		statusBarItem.tooltip =
 			`Node.js 版本: ${info.node}\n` +
-			`NPM 版本: ${info.npm}\n\n` +
-			`全局包列表:\n${info.globalPackages}`;
+			`NPM 版本: ${info.npm}`;
 
 	} catch (error: any) {
 		console.error('获取版本信息出错:', error);
