@@ -7,6 +7,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 let statusBarItem: vscode.StatusBarItem;
+let versionCheckInterval: NodeJS.Timeout;  // 改用 Timeout 类型
 
 export async function activate(context: vscode.ExtensionContext) {
 	try {
@@ -18,8 +19,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		context.subscriptions.push(statusBarItem);
 
 		// 注册命令
-		let disposable = vscode.commands.registerCommand('node-version.showNodeVersion', () => {
-			vscode.window.showInformationMessage(`当前 Node.js 版本: ${statusBarItem.text.replace('Node: ', '')}`);
+		let disposable = vscode.commands.registerCommand('node-version.showNodeVersion', async () => {
+			// 点击时刷新版本并显示
+			await updateNodeVersion();
+			vscode.window.showInformationMessage(`当前 Node.js 版本: ${statusBarItem.text.replace('$(versions) Node: ', '')}`);
 		});
 		context.subscriptions.push(disposable);
 
@@ -27,8 +30,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		await updateNodeVersion();
 		statusBarItem.show();
 
-		// 设置定时更新
-		setInterval(updateNodeVersion, 2000);
+		// 每2秒检查一次版本
+		versionCheckInterval = setInterval(async () => {
+			await updateNodeVersion();
+		}, 2000);
 
 		console.log('Node版本插件已激活');
 	} catch (error) {
@@ -53,5 +58,9 @@ export function deactivate() {
 	// 清理资源
 	if (statusBarItem) {
 		statusBarItem.dispose();
+	}
+	// 清理定时器
+	if (versionCheckInterval) {
+		clearInterval(versionCheckInterval);
 	}
 }
