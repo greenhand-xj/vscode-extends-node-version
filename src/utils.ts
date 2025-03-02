@@ -39,11 +39,20 @@ export async function checkNvm() {
   }
 }
 
-export async function checkNvmHasSelected() {
+export async function getNodeVersionWithNvm() {
   try {
     const { stdout } = await execAsync('nvm current');
+    return stdout.trim()
+  } catch {
+    return '';
+  }
+}
+
+export async function checkNvmHasSelected() {
+  try {
+    const version = await getNodeVersionWithNvm();
     // 如果输出包含 'none' 或 'system' 或为空，说明没有指定版本
-    return !stdout.includes('none') && !stdout.includes('system') && stdout.trim() !== '' && !stdout.includes('No current version');
+    return !version.includes('none') && !version.includes('system') && version.trim() !== '' && !version.includes('No current version');
   } catch {
     return false;
   }

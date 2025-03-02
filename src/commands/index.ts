@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execAsync, sleep, checkNvm, checkNvmHasSelected } from '../utils';
+import { execAsync, sleep, checkNvm, checkNvmHasSelected, getNodeVersionWithNvm } from '../utils';
 import { getVersionInfo, updateNodeVersion } from '../version';
 
 // 获取本地已安装的 Node 版本列表
@@ -96,6 +96,12 @@ export async function switchNodeVersion() {
       placeHolder: '选择要切换的 Node 版本'
     }
   );
+
+  const currentVersion = await getNodeVersionWithNvm();
+  if (currentVersion.replace('v', '') === selected) {
+    vscode.window.showInformationMessage('当前已切换到该版本');
+    return;
+  }
 
   if (selected) {
     try {
