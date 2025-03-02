@@ -3,7 +3,7 @@
   "displayName": "node-version-view",
   "description": "实时查看node",
   "publisher": "eric-fe",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/greenhand-xj/vscode-extends-node-version.git"
