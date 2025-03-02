@@ -27,7 +27,7 @@ export async function getVersionInfo() {
 
 // 更新状态栏显示的版本信息
 export async function updateNodeVersion() {
-  const { hasNvm, statusBarItem } = globalState
+  const { hasNvm, statusBarItem } = globalState;
   if (hasNvm) {
     globalState.hasSelectedVersion = await checkNvmHasSelected();
     if (!globalState.hasSelectedVersion) {
@@ -57,6 +57,10 @@ export async function updateNodeVersion() {
     statusBarItem!.text = '$(error) Node/NPM: 错误';
     statusBarItem!.tooltip = `无法获取版本信息: ${errorMessage}`;
 
-    vscode.window.showErrorMessage(`版本信息检测失败: ${errorMessage}`);
+    // 移除错误通知，由轮询逻辑统一处理
+    // vscode.window.showErrorMessage(`版本信息检测失败: ${errorMessage}`);
+
+    // 抛出错误，让轮询逻辑捕获
+    throw error;
   }
 } 

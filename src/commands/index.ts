@@ -100,6 +100,7 @@ export async function switchNodeVersion() {
   if (selected) {
     try {
       await execAsync(`nvm use ${selected}`);
+      await sleep(500);
       await updateNodeVersion();
       vscode.window.showInformationMessage(`已切换到 Node ${selected}`);
     } catch (error: any) {

@@ -1,14 +1,16 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { sleep, execAsync, checkNvm, checkNvmHasSelected } from './utils';
+import { checkNvm, checkNvmHasSelected, isWindows } from './utils';
 import { updateNodeVersion } from './version';
 import { showNodeVersion, switchNodeVersion, installNodeVersion } from './commands';
 
 export const globalState = {
 	statusBarItem: null as vscode.StatusBarItem | null,
 	hasNvm: false,
-	hasSelectedVersion: false
+	hasSelectedVersion: false,
+	errorCount: 0,
+	lastErrorMessage: ''
 }
 export let versionCheckInterval: NodeJS.Timeout;
 
@@ -17,6 +19,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	globalState.hasNvm = await checkNvm();
 	if (globalState.hasNvm) {
 		globalState.hasSelectedVersion = await checkNvmHasSelected();
+	}
+
+	// Windows 平台特定提示
+	if (isWindows) {
+		vscode.window.showInformationMessage('在 Windows 上，NVM 命令可能需要在终端中运行。如遇问题，请尝试在 VS Code 终端中手动执行 NVM 命令。');
 	}
 
 	if (!globalState.hasNvm) {
@@ -43,7 +50,32 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// 定时检查版本
 		versionCheckInterval = setInterval(async () => {
-			await updateNodeVersion();
+			try {
+				await updateNodeVersion();
+				globalState.errorCount = 0;
+			} catch (error: any) {
+				globalState.errorCount++;
+
+				globalState.lastErrorMessage = error.message || '未知错误';
+
+				if (globalState.errorCount === 1) {
+					vscode.window.showErrorMessage(`版本信息检测失败: ${globalState.lastErrorMessage}。后续错误将被静默处理。`);
+				}
+
+				if (globalState.errorCount > 5) {
+					clearInterval(versionCheckInterval);
+					versionCheckInterval = setInterval(async () => {
+						try {
+							await updateNodeVersion();
+							clearInterval(versionCheckInterval);
+							versionCheckInterval = setInterval(() => updateNodeVersion(), 3000);
+							globalState.errorCount = 0;
+						} catch {
+							// 静默处理错误
+						}
+					}, 30000);
+				}
+			}
 		}, 3000);
 
 		console.log('Node版本插件已激活');
