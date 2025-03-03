@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execAsync, sleep, checkNvm, checkNvmHasSelected, getNodeVersionWithNvm } from '../utils';
+import { execAsync, sleep, checkNvm, checkNvmHasSelected, getNodeVersionWithNvm, isWindows, isAdmin } from '../utils';
 import { getVersionInfo, updateNodeVersion } from '../version';
 
 // 获取本地已安装的 Node 版本列表
@@ -105,7 +105,53 @@ export async function switchNodeVersion() {
 
   if (selected) {
     try {
-      await execAsync(`nvm use ${selected}`);
+      const isAdminUser = await isAdmin;
+      if (!isAdminUser) {
+        vscode.window.showInformationMessage(`已用管理员权限切换NODE版本`);
+        // 非管理员权限，需要提权
+        if (isWindows) {
+          const terminal = vscode.window.createTerminal({
+            name: 'NVM Command',
+            shellPath: 'powershell.exe',
+            shellArgs: [
+              '-Command',
+              'Start-Process',
+              'powershell',
+              '-Verb',
+              'RunAs',
+              '-ArgumentList',
+              `'-NoExit -Command "nvm use ${selected}"'`
+            ]
+          });
+
+          // 等待一段时间后刷新状态
+          setTimeout(async () => {
+            await updateNodeVersion();
+            vscode.window.showInformationMessage(`已切换到 Node ${selected}`);
+          }, 1000);
+        } else {
+          // Mac/Linux 使用 sudo
+          const terminal = vscode.window.createTerminal({
+            name: 'NVM Command',
+            shellPath: 'bash',
+            shellArgs: ['-c', `sudo nvm use ${selected}`]
+          });
+          // 等待用户输入密码并执行完成
+          setTimeout(async () => {
+            await updateNodeVersion();
+            vscode.window.showInformationMessage(`已切换到 Node ${selected}`);
+          }, 1000);
+          return;
+        }
+      }
+
+      // 已有管理员权限，直接执行
+      const { stderr } = await execAsync(`nvm use ${selected}`);
+      if (stderr) {
+        vscode.window.showErrorMessage(`切换版本失败: ${stderr}`);
+        return;
+      }
+
       await sleep(500);
       await updateNodeVersion();
       vscode.window.showInformationMessage(`已切换到 Node ${selected}`);

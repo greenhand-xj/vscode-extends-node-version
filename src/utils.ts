@@ -1,4 +1,5 @@
 import { exec, ExecOptions } from 'child_process';
+import * as vscode from 'vscode';
 
 // 自定义 exec 函数，添加 Windows 环境支持
 export function execAsync(command: string, options: ExecOptions = {}) {
@@ -62,3 +63,18 @@ export const isWindows = process.platform === 'win32';
 export const isLinux = process.platform === 'linux';
 export const isMac = process.platform === 'darwin';
 
+// 添加检查管理员权限的函数
+export const isAdmin = (async () => {
+  try {
+    if (isWindows) {
+      const { stdout } = await execAsync('net session');
+      return stdout.length > 0;
+    } else {
+      // Mac/Linux 使用 id 命令检查 root 权限
+      const { stdout } = await execAsync('id -u');
+      return stdout.trim() === '0';
+    }
+  } catch {
+    return false;
+  }
+})()

@@ -86,8 +86,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
 	// 清理资源
-	if ((global as any).statusBarItem) {
-		(global as any).statusBarItem.dispose();
+	if (globalState.statusBarItem) {
+		globalState.statusBarItem.dispose();
 	}
 
 	// 清理定时器
